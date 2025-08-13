@@ -1,107 +1,185 @@
-# main.py
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Feedback System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .star-rating input { display: none; }
+        .star-rating label {
+            font-size: 2.5rem;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #f59e0b;
+        }
+        .star-rating input:checked + label:hover,
+        .star-rating input:checked ~ label:hover,
+        .star-rating input:checked ~ label:hover ~ label,
+        .star-rating label:hover ~ input:checked ~ label {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
 
-# Import the necessary tools from the FastAPI library
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Dict
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900">Product Feedback Portal</h1>
+            <p class="mt-2 text-lg text-gray-600">Help us improve by sharing your experience.</p>
+        </header>
 
-# Create an instance of the FastAPI class
-# This 'app' is the main entry point for your API
-app = FastAPI(
-    title="Hackathon Feedback System",
-    description="A simple API to submit and retrieve product feedback. This is the backend component.",
-    version="1.0.0",
-)
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-# --- CORS Middleware ---
-# This is crucial for a hackathon! It allows your frontend (running on a different address)
-# to communicate with this backend.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers
-)
+            <!-- Left Side: Feedback Submission Form -->
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-bold mb-6">Leave a Review</h2>
+                <form id="feedbackForm">
+                    <div class="mb-4">
+                        <label for="productId" class="block text-sm font-medium text-gray-700 mb-1">Product ID</label>
+                        <input type="number" id="productId" name="productId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., 101" required>
+                    </div>
 
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Your Rating</label>
+                        <div class="star-rating flex flex-row-reverse justify-end items-center">
+                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">★</label>
+                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">★</label>
+                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">★</label>
+                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">★</label>
+                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">★</label>
+                        </div>
+                    </div>
 
-# --- Data Models (Data Structure) ---
-# Pydantic models define the structure of your data.
-# FastAPI uses these for automatic validation and documentation.
+                    <div class="mb-6">
+                        <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+                        <textarea id="comment" name="comment" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Tell us more about your experience..." required></textarea>
+                    </div>
 
-class FeedbackSubmit(BaseModel):
-    """Model for submitting a new piece of feedback."""
-    product_id: int = Field(..., example=1, description="The ID of the product being reviewed.")
-    rating: int = Field(..., ge=1, le=5, description="A rating from 1 (bad) to 5 (great).")
-    comment: str = Field(..., min_length=5, example="This product was amazing!", description="The user's written comment.")
+                    <button type="submit" id="submitBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                        Submit Feedback
+                    </button>
+                </form>
+                 <div id="formMessage" class="mt-4 text-center"></div>
+            </div>
 
-class FeedbackDisplay(BaseModel):
-    """Model for displaying feedback after it's been stored."""
-    feedback_id: int
-    product_id: int
-    rating: int
-    comment: str
+            <!-- Right Side: Feedback Display -->
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-bold mb-6">Product Reviews</h2>
+                <div class="mb-4">
+                    <label for="searchProductId" class="block text-sm font-medium text-gray-700 mb-1">Enter Product ID to see reviews</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="searchProductId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., 101">
+                        <button id="searchBtn" class="bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition">Search</button>
+                    </div>
+                </div>
+                <div id="feedbackDisplay" class="mt-6 space-y-4 h-96 overflow-y-auto pr-2">
+                    <p class="text-gray-500 text-center">Enter a Product ID to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-# --- In-Memory Database ---
-# For a hackathon, a real database is too slow to set up.
-# We'll use a simple Python dictionary as a temporary, in-memory "database".
-# This makes your app super fast and easy to run anywhere.
-# The key will be the feedback_id, and the value will be the feedback data.
-fake_feedback_db: Dict[int, FeedbackDisplay] = {}
-current_feedback_id = 0
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const feedbackForm = document.getElementById('feedbackForm');
+        const formMessage = document.getElementById('formMessage');
+        const submitBtn = document.getElementById('submitBtn');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchProductId');
+        const feedbackDisplay = document.getElementById('feedbackDisplay');
 
-# --- API Endpoints (The URLs) ---
-# These are the URLs your application will respond to.
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(feedbackForm);
+            const ratingValue = formData.get('rating');
+            if (!ratingValue) {
+                showMessage('Please select a star rating.', 'red');
+                return;
+            }
+            const feedbackData = {
+                product_id: parseInt(formData.get('productId')),
+                rating: parseInt(ratingValue),
+                comment: formData.get('comment'),
+            };
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            try {
+                const response = await fetch(`${API_BASE_URL}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(feedbackData),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to submit feedback.');
+                }
+                showMessage('Thank you for your feedback!', 'green');
+                feedbackForm.reset();
+                if (feedbackData.product_id == searchInput.value) {
+                    fetchFeedback(feedbackData.product_id);
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'red');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Feedback';
+            }
+        });
 
-@app.get("/")
-def read_root():
-    """A simple root endpoint to confirm the API is running."""
-    return {"message": "Feedback API is running! Go to /docs for interactive API documentation."}
+        searchBtn.addEventListener('click', () => {
+            const productId = searchInput.value;
+            if (productId) fetchFeedback(parseInt(productId));
+        });
 
-@app.post("/feedback", response_model=FeedbackDisplay, status_code=201)
-def submit_feedback(feedback: FeedbackSubmit):
-    """
-    Submit feedback for a product.
-    This endpoint receives feedback data from the frontend, validates it, and stores it.
-    """
-    global current_feedback_id
-    current_feedback_id += 1 # Increment the ID to ensure every feedback is unique
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') searchBtn.click();
+        });
 
-    # Create a new feedback record to store in our database
-    new_feedback = FeedbackDisplay(
-        feedback_id=current_feedback_id,
-        product_id=feedback.product_id,
-        rating=feedback.rating,
-        comment=feedback.comment
-    )
+        async function fetchFeedback(productId) {
+            feedbackDisplay.innerHTML = '<p class="text-gray-500 text-center">Loading reviews...</p>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/${productId}/feedback`);
+                if (!response.ok) throw new Error(`Could not find reviews. Status: ${response.status}`);
+                const reviews = await response.json();
+                if (reviews.length === 0) {
+                    feedbackDisplay.innerHTML = `<p class="text-gray-500 text-center">No reviews found for Product ID ${productId}. Be the first!</p>`;
+                    return;
+                }
+                feedbackDisplay.innerHTML = '';
+                reviews.reverse().forEach(review => {
+                    const reviewElement = document.createElement('div');
+                    reviewElement.className = 'p-4 bg-gray-100 rounded-lg border border-gray-200';
+                    const stars = '★'.repeat(review.rating).padEnd(5, '☆');
+                    reviewElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <p class="font-bold text-indigo-600">Product ID: ${review.product_id}</p>
+                            <p class="text-lg text-amber-500" title="${review.rating} stars">${stars}</p>
+                        </div>
+                        <p class="text-gray-700 mt-2">${review.comment}</p>
+                    `;
+                    feedbackDisplay.appendChild(reviewElement);
+                });
+            } catch (error) {
+                feedbackDisplay.innerHTML = `<p class="text-red-500 text-center">Error: Could not load reviews for Product ID ${productId}.</p>`;
+                console.error("Fetch error:", error);
+            }
+        }
 
-    # Save it to our fake database
-    fake_feedback_db[new_feedback.feedback_id] = new_feedback
-
-    # Return the created feedback to the frontend
-    return new_feedback
-
-@app.get("/products/{product_id}/feedback", response_model=List[FeedbackDisplay])
-def get_feedback_for_product(product_id: int):
-    """
-    Get all feedback submitted for a specific product.
-    This endpoint searches our "database" and returns all matching feedback.
-    """
-    # Use a list comprehension for a clean and efficient way to find all feedback
-    # for the given product_id.
-    product_reviews = [
-        feedback for feedback in fake_feedback_db.values()
-        if feedback.product_id == product_id
-    ]
-
-    # While not strictly necessary for a hackathon, returning an empty list
-    # is often better than an error if nothing is found.
-    # if not product_reviews:
-    #     raise HTTPException(
-    #         status_code=404,
-    #         detail=f"No feedback found for product ID {product_id}"
-    #     )
-
-    return product_reviews
-
+        function showMessage(message, color) {
+            formMessage.textContent = message;
+            formMessage.className = `mt-4 text-center text-${color}-600 font-semibold`;
+            setTimeout(() => { formMessage.textContent = ''; }, 4000);
+        }
+    </script>
+</body>
+</html>
